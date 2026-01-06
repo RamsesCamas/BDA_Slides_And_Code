@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: repo-optimizado-db
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql:/sql
+    networks:
+      - repo-network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  runner:
+    image: postgres:16-alpine
+    container_name: repo-optimizado-runner
+    volumes:
+      - ./sql:/sql
+      - ./scripts:/scripts
+    networks:
+      - repo-network
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  repo-network:
+    driver: bridge
