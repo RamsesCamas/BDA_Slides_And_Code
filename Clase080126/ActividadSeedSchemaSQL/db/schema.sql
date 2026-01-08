@@ -80,6 +80,11 @@ CREATE TABLE orden_detalles (
     UNIQUE (orden_id, producto_id)
 );
 
+
+
+-- ESTUDIANTES HASTA ACÁ
+
+
 -- ============================================
 -- ÍNDICES (para optimizar consultas)
 -- ============================================
