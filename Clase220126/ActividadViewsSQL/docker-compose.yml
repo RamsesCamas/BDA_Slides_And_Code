@@ -1,0 +1,24 @@
+# Docker Compose para PostgreSQL
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_container
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: actividad_db
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db:/scripts:ro  # Scripts accesibles en /scripts (NO se autoejecuttan)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d actividad_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
