@@ -35,7 +35,7 @@ SELECT
     p.nombre AS producto_nombre,
     SUM(od.cantidad) AS unidades_vendidas,
     SUM(od.subtotal) AS ventas_total,
-    SUM(od.subtotal) / NULLIF(SUM(od.cantidad), 0) AS precio_promedio
+    ROUND(SUM(od.subtotal) / NULLIF(SUM(od.cantidad), 0), 2) AS precio_promedio
 FROM productos p
 JOIN orden_detalles od ON od.producto_id = p.id
 GROUP BY p.id, p.nombre;
@@ -57,7 +57,7 @@ SELECT
     u.nombre AS usuario_nombre,
     COUNT(DISTINCT o.id) AS ordenes_count,
     SUM(o.total) AS gasto_total,
-    SUM(o.total) / NULLIF(COUNT(DISTINCT o.id), 0) AS gasto_promedio
+    ROUND(SUM(o.total) / NULLIF(COUNT(DISTINCT o.id), 0), 2) AS gasto_promedio
 FROM usuarios u
 JOIN ordenes o ON o.usuario_id = u.id
 GROUP BY u.id, u.nombre;
@@ -77,7 +77,7 @@ SELECT
     date_trunc('month', o.created_at)::date AS mes,
     COUNT(DISTINCT o.id) AS ordenes_count,
     SUM(o.total) AS ventas_total,
-    SUM(o.total) / NULLIF(COUNT(DISTINCT o.id), 0) AS ticket_promedio
+    ROUND(SUM(o.total) / NULLIF(COUNT(DISTINCT o.id), 0), 2) AS ticket_promedio
 FROM ordenes o
 GROUP BY date_trunc('month', o.created_at)::date;
 
@@ -97,7 +97,8 @@ SELECT
     c.id AS categoria_id,
     c.nombre AS categoria_nombre,
     COALESCE(SUM(od.subtotal), 0) AS ventas_total,
-    COALESCE(SUM(od.cantidad), 0) AS unidades_vendidas
+    COALESCE(SUM(od.cantidad), 0) AS unidades_vendidas,
+    ROUND(COALESCE(SUM(od.subtotal), 0) / NULLIF(COUNT(DISTINCT od.producto_id), 0), 2) AS ventas_promedio
 FROM categorias c
 LEFT JOIN productos p ON p.categoria_id = c.id
 LEFT JOIN orden_detalles od ON od.producto_id = p.id
