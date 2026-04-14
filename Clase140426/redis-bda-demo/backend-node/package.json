@@ -1,0 +1,14 @@
+{
+  "name": "redis-bda-demo-node",
+  "version": "1.0.0",
+  "description": "Backend Node.js (Express) para demo de Redis Cache - BDA",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ioredis": "^5.4.0",
+    "pg": "^8.13.0"
+  }
+}

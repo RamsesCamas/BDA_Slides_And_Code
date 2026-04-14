@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: redis-demo-postgres
+    environment:
+      POSTGRES_DB: bda
+      POSTGRES_USER: bda
+      POSTGRES_PASSWORD: bda
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      # Verificamos que TODAS las tablas del init.sql estén pobladas.
+      # Usamos reviews (la última tabla en insertarse, 1M filas) como indicador
+      # de que el seed terminó completamente.
+      test: ["CMD-SHELL", "psql -U bda -d bda -c 'SELECT 1 FROM reviews LIMIT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    networks:
+      - redis-demo-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-demo-redis
+    # Configuración de Redis como cache:
+    # --appendonly yes        → persistencia AOF (para inspeccionar datos en clase)
+    # --maxmemory 256mb       → límite de memoria
+    # --maxmemory-policy allkeys-lru → evicción LRU cuando se llena
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - redis-demo-net
+
+  backend-python:
+    build: ./backend-python
+    container_name: redis-demo-python
+    environment:
+      DATABASE_URL: postgresql://bda:bda@postgres:5432/bda
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8001:8000"
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - redis-demo-net
+
+  backend-node:
+    build: ./backend-node
+    container_name: redis-demo-node
+    environment:
+      DATABASE_URL: postgresql://bda:bda@postgres:5432/bda
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8002:3000"
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - redis-demo-net
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  redis-demo-net:
+    driver: bridge
